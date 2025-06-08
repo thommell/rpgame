@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Enumerable = System.Linq.Enumerable;
 
 namespace rpgame.Core.SceneManaging;
 
@@ -33,38 +36,38 @@ public class Scene {
   if (isLoaded) return;
   gameObjects = CreateGameObjects();
  }
-
  public virtual void Update(GameTime gameTime) {
-  RemoveObjects();
  }
  public virtual void Load() {
  }
-
  public virtual void LateLoad() {
+  RemoveObjects();
  }
-
+ // Only call this after the update tick
  private void AddNewObjects() {
   gameObjects.AddRange(gameObjectsToAdd);
   gameObjectsToAdd.Clear();
  }
-
+ // Only call this after the update tick
  private void RemoveObjects() {
   List<GameObject> sharedObjects = GetSharedNames(gameObjects, gameObjectsToRemove);
-  foreach (GameObject sharedObject in sharedObjects) {
-   gameObjects.Remove(sharedObject);
-  }
+  gameObjects.RemoveAll(x => sharedObjects.Contains(x));
   // Clear old remove list
   gameObjectsToRemove.Clear();
  }
-
  protected void RemoveObject(GameObject pGameObject) {
   if (pGameObject == null) return;
   gameObjectsToRemove.Add(pGameObject);
  }
-
  protected void RemoveObject(string pName) {
   if (pName == null) return;
-  gameObjectsToRemove.Add(new GameObject(pName));
+  // Create dictionary to efficiently go through the names of all the current GameObjects
+  var objects = gameObjects
+   .GroupBy(go => go.Name)
+   .ToDictionary(g => g.Key, g => g.ToList());
+  if (objects.TryGetValue(pName, out var objectsToRemove)) {
+   gameObjectsToRemove.AddRange(objectsToRemove);
+  }
  }
  private List<GameObject> GetSharedNames(List<GameObject> listA, List<GameObject> listB) {
   var objs = new List<GameObject>();

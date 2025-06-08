@@ -21,6 +21,7 @@ public class TestScene : Scene {
     }
 
     public override void LateLoad() {
+        base.LateLoad();
         Console.WriteLine($"GameObjects after LateLoad: {GameObjects.Count}");
     }
 }
